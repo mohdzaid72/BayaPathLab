@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Header -->
+<header class="header">
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="/static/image/l.png" alt="BayaPathLab Logo" class="logo-icon">
+                <h2> BayaPathLab</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Home</a></li>
+                <li><a href="#services" class="nav-link">Tests</a></li>
+                <li><a href="#about" class="nav-link">About</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+                <li><a href="/admin" class="admin-btn"style="color: inherit; text-decoration: none;">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<!-- Hero Section -->
+<section id="home" class="hero">
+    <div class="hero-content">
+        <img src="/static/image/l.png" alt="BayaPathLab Logo" class="hero-logo">
+
+        <h1>Trusted Pathology Services</h1>
+        <p>Kelakhera, Uttarakhand - Accurate & Reliable Test Results</p>
+        <a href="#services" class="cta-button">View Our Tests</a>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="services">
+    <div class="container">
+        <h2 class="section-title">Our Test Services</h2>
+        <div class="tests-grid">
+            {% for test in tests %}
+            <div class="test-card book-test"data-test="{{ test.test_name }}">
+                <img src="{{ test.image_path }}" alt="{{ test.test_name }}" class="test-image">
+                <div class="test-info">
+                    <h3>{{ test.test_name }}</h3>
+                    <p class="price">₹{{ "%.2f"|format(test.price) }}</p>
+                    {% if test.description %}
+                    <p>{{ test.description[:100] }}...</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+         
+
+    </div>
+</section>
+
+
+
+<!-- About Section -->
+<section id="about" class="about">
+    <div class="container">
+        <div class="about-content">
+            
+            <!-- LEFT SIDE (Text) -->
+            <div class="about-text">
+                <h2>About BayaPathLab</h2>
+                <p>Your trusted pathology laboratory in Kelakhera, Uttarakhand. We provide accurate, fast, and reliable diagnostic services with state-of-the-art equipment and experienced technicians.</p>
+                
+                <ul class="features">
+                    <li><i class="fas fa-check"></i> NABL Accredited</li>
+                    <li><i class="fas fa-check"></i> 24-48 Hours Results</li>
+                    <li><i class="fas fa-check"></i> Home Collection Available</li>
+                    <li><i class="fas fa-check"></i> Certified Pathologists</li>
+                </ul>
+            </div>
+
+            <!-- RIGHT SIDE (Owner) -->
+            <div class="about-owner">
+    <div class="owner-img">
+        <img src="/static/image/owner.jpg" alt="Dr. Sukhdev Singh">
+    </div>
+    <h3>Dr. Sukhdev Singh</h3>
+    <p>B.Sc MLT (Pathology)</p>
+    <p>At your service</p>
+</div>
+
+        </div>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section id="contact" class="contact">
+    <div class="container">
+        <h2 class="section-title">Get In Touch</h2>
+        <div class="contact-content">
+            <div class="contact-info">
+                
+                <div class="contact-item">
+                </div>
+                
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <div>
+                        <h3>
+                            <a href="https://maps.app.goo.gl/XHxb6mpmr79db9m19"style="color: inherit; text-decoration: none;">Location</a>
+                        </h3>
+                        <p>Near Thana Kelakhera, Uttarakhand</p>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-phone"></i>
+                    <div>
+                        <h3>
+                            <a href="https://wa.me/75000720323"style="color: inherit; text-decoration: none;">Phone</a>
+                        </h3>
+                        <p>+91 75000720323</p>
+                    </div>
+                </div>
+                
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                        <div>
+                            <h3>
+                                <a href="mailto:bayapathlogy@gmail.com" style="color: inherit; text-decoration: none;">
+                                Email
+                                </a>
+                            </h3>
+                                 <p>bayapathlogy@gmail.com</p>
+                        </div>
+                </div>
+
+
+                <div class="contact-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <h3>Hours</h3>
+                        <p>24x7 Availability</p>
+                    </div>
+                </div>
+            </div>
+            <form class="contact-form" method="POST" action="/enquiry">
+                <div class="form-group">
+                    <input type="text" name="patient_name" placeholder="Your Name *" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <input type="tel" name="phone" placeholder="Phone *" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="Email">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="test_name" placeholder="Test Name">
+                </div>
+                <div class="form-group">
+                    <textarea name="message" placeholder="Your Message" rows="4"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Send Enquiry</button>
+            </form>
+        </div>
+        
+    </div>
+    
+</section>
+
+<style>
+.contact-icons {
+    display: flex;
+    justify-content: center;   /* 👈 center align */
+    align-items: center;
+    gap: 25px;
+    margin-top: 20px;          /* 👈 upar se spacing */
+    margin-bottom: 10px;       /* 👈 neeche minor gap (footer se) */
+    padding: 0;
+}
+
+.contact-icons a {
+    color: #ff6b6b;
+    font-size: 2.5rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.contact-icons a:hover {
+    color: #667eea;
+    transform: translateY(-3px);
+}
+</style>
+
+<div class="contact-icons">
+    <!-- WhatsApp -->
+    <a href="https://wa.me/9175000720323" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- Map -->
+    <a href="https://maps.app.goo.gl/XHxb6mpmr79db9m19" target="_blank">
+        <i class="fas fa-map-marker-alt"></i>
+    </a>
+</div>
+
+<!--model page pop up-->
+
+<div id="bookingModal" class="modal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Book Test</h2>
+            <span class="close">&times;</span>
+        </div>
+
+        <form method="POST" action="/enquiry" class="modal-form">
+
+            <div class="form-group">
+                <label>Patient Name</label>
+                <input type="text" name="patient_name" required placeholder="Enter your name">
+                
+            </div>
+
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" name="phone" required pattern="[0-9]{10}" placeholder="Enter mobile number">
+                
+            </div>
+
+            <div class="form-group">
+                <label>Selected Test</label>
+                <input type="text" id="testName" name="test_name" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Message (Optional)</label>
+                <textarea name="message"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">Send Enquiry</button>
+
+        </form>
+
+    </div>
+
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const modal = document.getElementById("bookingModal");
+    const testInput = document.getElementById("testName");
+    const closeBtn = document.querySelector(".close");
+
+    // CLICK HANDLER (robust)
+    document.addEventListener("click", function (e) {
+
+        let card = e.target.closest(".book-test");
+
+        if (card) {
+            let testName = card.getAttribute("data-test");
+
+            console.log("Clicked test:", testName); // debug
+
+            testInput.value = testName;
+            modal.style.display = "flex";
+        }
+        
+    });
+
+    // CLOSE BUTTON
+    closeBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+
+    // OUTSIDE CLICK
+    window.addEventListener("click", function (e) {
+        if (e.target == modal) {
+            modal.style.display = "none";
+        }
+    });
+
+});
+</script>
+
+
+
+
+
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2022 BayaPathLab - Kelakhera, Uttarakhand. All rights reserved.</p>
+    </div>
+</footer>
+
+
+
+{% endblock %}
+
