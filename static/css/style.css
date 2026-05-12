@@ -704,3 +704,137 @@ body {
         text-align: center;
     }
 }
+
+/* =========================
+   FINAL MOBILE OVERRIDE FIX
+   (PUT AT BOTTOM OF CSS)
+========================= */
+
+@media (max-width: 768px) {
+
+    /* prevent overflow issues */
+    body {
+        font-size: 13px;
+        overflow-x: hidden;
+    }
+
+    /* ================= HEADER FIX ================= */
+
+    .nav-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 55px;
+        padding: 0 10px;
+        position: relative;
+    }
+
+    /* LOGO CENTER FIX */
+    .logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .logo-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .logo h2 {
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    /* HIDE MENU ITEMS */
+    .nav-menu {
+        display: none !important;
+    }
+
+    /* ADMIN BUTTON ALWAYS VISIBLE */
+    .admin-btn {
+        display: inline-block !important;
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        padding: 6px 10px;
+        border-radius: 20px;
+    }
+
+    /* ================= HERO FIX ================= */
+
+    .hero {
+        height: auto;
+        min-height: 80vh;
+        padding: 90px 15px 40px;
+        text-align: center;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .hero-logo {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 10px;
+    }
+
+    .hero-content h1 {
+        font-size: 1.4rem;
+    }
+
+    .hero-content p {
+        font-size: 0.9rem;
+    }
+
+    .cta-button {
+        font-size: 12px;
+        padding: 8px 14px;
+    }
+
+    /* ================= GRID FIX ================= */
+
+    .tests-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .test-card {
+        border-radius: 12px;
+    }
+
+    .test-image {
+        height: 160px;
+    }
+
+    /* ================= ABOUT FIX ================= */
+
+    .about-content,
+    .contact-content {
+        grid-template-columns: 1fr;
+    }
+
+    .about-owner img {
+        width: 140px !important;
+        height: 170px !important;
+    }
+
+    /* ================= FORM FIX ================= */
+
+    .form-group input,
+    .form-group textarea {
+        font-size: 13px;
+        padding: 8px;
+    }
+
+    /* ================= FOOTER FIX ================= */
+
+    .footer {
+        font-size: 12px;
+        padding: 8px;
+    }
+}

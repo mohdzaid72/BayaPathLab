@@ -295,5 +295,219 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
+
+<!-- Ai Chatbot-->
+
+
+<style>
+/* ===== BUTTON ===== */
+#chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-size: 22px;
+    padding: 14px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 99999;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+#chat-button:hover {
+    transform: scale(1.1);
+}
+
+/* ===== CHAT BOX ===== */
+#chat-box {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 340px;
+    height: 460px;
+    background: #ffffff;
+    border-radius: 16px;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+/* ===== HEADER ===== */
+.chat-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ===== MESSAGES ===== */
+#chat-messages {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    background: #f5f7fb;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== BUBBLES ===== */
+.message {
+    padding: 10px 14px;
+    margin: 6px 0;
+    border-radius: 14px;
+    max-width: 75%;
+    font-size: 14px;
+    line-height: 1.4;
+    animation: fadeIn 0.2s ease-in;
+}
+
+.user {
+    background: #667eea;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.ai {
+    background: white;
+    color: black;
+    align-self: flex-start;
+    border: 1px solid #ddd;
+    border-bottom-left-radius: 4px;
+}
+
+/* ===== INPUT ===== */
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    outline: none;
+}
+
+.chat-input button {
+    margin-left: 8px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.chat-input button:hover {
+    background: #5a67d8;
+}
+
+/* ===== LOADER ===== */
+.typing {
+    font-size: 12px;
+    color: gray;
+    margin: 5px;
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(5px);}
+    to {opacity: 1; transform: translateY(0);}
+
+}
+</style>
+
+
+<!-- BUTTON -->
+<div id="chat-button">💬</div>
+<!-- CHAT BOX -->
+<div id="chat-box">
+    <div class="chat-header">
+        <span>🧪 BayaPath AI</span>
+        <button onclick="closeChat()">×</button>
+    </div>
+
+    <div id="chat-messages"></div>
+
+    <div class="chat-input">
+        <input type="text" id="user-input" placeholder="Type your message...">
+        <button onclick="sendMessage()">➤</button>
+    </div>
+</div>
+
+<script>
+const box = document.getElementById("chat-box");
+const btn = document.getElementById("chat-button");
+const msgBox = document.getElementById("chat-messages");
+const inputField = document.getElementById("user-input");
+
+btn.onclick = () => box.style.display = "flex";
+
+function closeChat() {
+    box.style.display = "none";
+}
+
+// ✅ ENTER KEY FIX (important)
+inputField.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+async function sendMessage() {
+    let text = inputField.value.trim();
+    if (!text) return;
+
+    // USER MESSAGE
+    msgBox.innerHTML += `<div class="message user">${text}</div>`;
+    inputField.value = "";
+
+    // LOADER
+    let loader = document.createElement("div");
+    loader.className = "typing";
+    loader.innerText = "AI is typing...";
+    msgBox.appendChild(loader);
+    msgBox.scrollTop = msgBox.scrollHeight;
+
+    try {
+        let res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        });
+
+        let data = await res.json();
+
+        loader.remove();
+
+        let cleanHTML = DOMPurify.sanitize(marked.parse(data.reply));
+
+        msgBox.innerHTML += `<div class="message ai">${cleanHTML}</div>`;
+        msgBox.scrollTop = msgBox.scrollHeight;
+
+    } catch (err) {
+        loader.remove();
+        msgBox.innerHTML += `<div class="message ai">Server error</div>`;
+    }
+}
+</script>
+
+
+
+
+
+
 {% endblock %}
 
