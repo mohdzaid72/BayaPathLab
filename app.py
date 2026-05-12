@@ -93,16 +93,16 @@ async def home(request: Request, db: Session = Depends(get_db)):
         tests = []
     return templates.TemplateResponse("index.html", {"request": request, "tests": tests})
 
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_login_page(request: Request):
-    response = templates.TemplateResponse("login.html", {"request": request})
 
-    # 🚫 Prevent browser caching (IMPORTANT FIX)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
 
-    return response
+@app.get("/admin")
+async def admin_redirect():
+    return RedirectResponse(
+        url="/admin/login",
+        status_code=302
+    )
+    
+    
 @app.post("/admin/login")
 async def admin_login(
     request: Request,
@@ -270,9 +270,9 @@ async def chat(req: ChatRequest):
 # =========================
 
 conf = ConnectionConfig(
-    MAIL_USERNAME="bayapathlab@gmail.com",
-    MAIL_PASSWORD="YOUR_GMAIL_APP_PASSWORD",
-    MAIL_FROM="bayapathlab@gmail.com",
+    MAIL_USERNAME="ayaanturk72@gmail.com",
+    MAIL_PASSWORD="czfm ppfu xbjg iwip",
+    MAIL_FROM="ayaanturk72@gmail.com",
     MAIL_PORT=587,
     MAIL_SERVER="smtp.gmail.com",
     MAIL_STARTTLS=True,
@@ -306,21 +306,30 @@ async def login_page(request: Request):
 # =========================
 
 @app.get("/admin/forgot-password")
-async def forgot_password():
+async def forgot_password(db: Session = Depends(get_db)):
 
-    # Generate secure token
+    # STEP 1: get admin from DB
+    admin = db.query(Admin).filter(
+        Admin.username == "admin"
+    ).first()
+
+    if not admin:
+        return {"error": "Admin not found"}
+
+    # STEP 2: generate token
     token = secrets.token_urlsafe(32)
 
-    # Save token
-    reset_tokens[token] = True
-
+    # STEP 3: store admin_id in token
+    reset_tokens[token] = {
+        "admin_id": admin.id
+    }
     # Reset link
     reset_link = f"http://127.0.0.1:8000/reset-password/{token}"
 
     # Email message
     message = MessageSchema(
         subject="Reset Admin Password",
-        recipients=["bayapathlab@gmail.com"],
+        recipients=["mohdzaidonly@gmail.com"],
         body=f"""
 Click the link below to reset your password:
 
@@ -368,28 +377,36 @@ async def reset_password_page(
 @app.post("/reset-password")
 async def update_password(
     token: str = Form(...),
-    new_password: str = Form(...)
+    username: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
 ):
 
-    global admin_password_hash
+    data = reset_tokens.get(token)
 
-    # Validate token
-    if token not in reset_tokens:
-        return {
-            "error": "Invalid token"
-        }
+    if not data:
+        return {"error": "Invalid or expired token"}
 
-    # Hash new password
-    admin_password_hash = bcrypt.hashpw(
-        new_password.encode(),
-        bcrypt.gensalt()
-    )
+    if new_password != confirm_password:
+        return {"error": "Passwords do not match"}
 
-    # Remove token
+    admin = db.query(Admin).filter(
+        Admin.id == data["admin_id"]
+    ).first()
+
+    if not admin:
+        return {"error": "Admin not found"}
+
+    # update directly
+    admin.username = username
+    admin.hashed_password = pwd_context.hash(new_password)
+
+    db.commit()
+
     del reset_tokens[token]
 
     return RedirectResponse(
         url="/admin/login",
         status_code=303
     )
-    
