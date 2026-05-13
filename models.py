@@ -7,13 +7,21 @@ class TestPoster(Base):
     __tablename__ = "test_posters"
     
     id = Column(Integer, primary_key=True, index=True)
-    test_name = Column(String(100), nullable=False)
-    price = Column(Float, nullable=False)
-    description = Column(Text)
-    image_path = Column(String(255), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    is_active = Column(Boolean, default=True)
 
+    test_name = Column(String(100), nullable=False)
+
+    price = Column(Float, nullable=False)
+
+    # NEW FIELD
+    mrp_price = Column(Float, nullable=True)
+
+    description = Column(Text)
+
+    image_path = Column(String(255), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    is_active = Column(Boolean, default=True)
 class Enquiry(Base):
     __tablename__ = "enquiries"
     

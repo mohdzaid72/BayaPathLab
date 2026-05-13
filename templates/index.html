@@ -42,7 +42,17 @@
                 <img src="{{ test.image_path }}" alt="{{ test.test_name }}" class="test-image">
                 <div class="test-info">
                     <h3>{{ test.test_name }}</h3>
-                    <p class="price">₹{{ "%.2f"|format(test.price) }}</p>
+                    <div class="price-section">
+
+                        <div class="mrp">
+                            ₹{{ test.mrp_price|int if test.mrp_price == test.mrp_price|int else test.mrp_price }}
+                        </div>
+
+                        <div class="offer-price">
+                            ₹{{ test.price|int if test.price == test.price|int else test.price }}/-
+                        </div>
+
+                    </div>
                     {% if test.description %}
                     <p>{{ test.description[:100] }}...</p>
                     {% endif %}
@@ -68,7 +78,7 @@
                 <p>Your trusted pathology laboratory in Kelakhera, Uttarakhand. We provide accurate, fast, and reliable diagnostic services with state-of-the-art equipment and experienced technicians.</p>
                 
                 <ul class="features">
-                    <li><i class="fas fa-check"></i> NABL Accredited</li>
+                    <li><i class="fas fa-check"></i> Advanced Diagnostic Lab</li>
                     <li><i class="fas fa-check"></i> 24-48 Hours Results</li>
                     <li><i class="fas fa-check"></i> Home Collection Available</li>
                     <li><i class="fas fa-check"></i> Certified Pathologists</li>

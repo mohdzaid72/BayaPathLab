@@ -837,4 +837,26 @@ body {
         font-size: 12px;
         padding: 8px;
     }
+
+    /* ================= MRP ================= */
+
 }
+    .price-section{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:8px;
+}
+
+.mrp{
+    color:#999;
+    text-decoration:line-through;
+    font-size:15px;
+}
+
+.offer-price{
+    color:#e53935;
+    font-size:20px;
+    font-weight:700;
+}
+

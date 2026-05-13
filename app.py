@@ -342,6 +342,7 @@ async def admin_dashboard(
 async def add_test(
     request: Request,
     test_name: str = Form(...),
+    mrp_price: float = Form(...),   # NEW
     price: float = Form(...),
     description: str = Form(""),
     file: UploadFile = File(...),
@@ -394,6 +395,7 @@ async def add_test(
 
         test = TestPoster(
             test_name=test_name[:100],
+            mrp_price=mrp_price,   # NEW
             price=price,
             description=description[:1000],
             image_path=f"/uploads/{filename}"
