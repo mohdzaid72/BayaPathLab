@@ -1,9 +1,8 @@
 import os
-import shutil
 import secrets
+import logging
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -18,50 +17,49 @@ from fastapi import (
     status
 )
 
-from fastapi.responses import (
-    HTMLResponse,
-    RedirectResponse,
-    JSONResponse
-)
-
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.concurrency import run_in_threadpool
 
 from sqlalchemy.orm import Session
 
 from passlib.context import CryptContext
 from itsdangerous import URLSafeTimedSerializer
 
-from fastapi_mail import (
-    FastMail,
-    MessageSchema,
-    ConnectionConfig
-)
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from database import SessionLocal, engine
-from models import (
-    Base,
-    TestPoster,
-    Enquiry,
-    Admin,
-    PasswordReset
-)
+from models import Base, TestPoster, Enquiry, Admin
 
 from llm import get_ai_response
 
 # =========================
-# LOAD ENV
+# LOGGING
+# =========================
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("bayapathlab")
+
+# =========================
+# ENV
 # =========================
 
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
-
 if not SECRET_KEY:
-    raise Exception("SECRET_KEY missing in .env")
+    raise Exception("SECRET_KEY missing")
+
+ENV = os.getenv("ENV", "development")
+
+BASE_URL = os.getenv(
+    "BASE_URL",
+    "https://bayapathlab.com" if ENV == "production" else "http://127.0.0.1:8000"
+)
 
 # =========================
-# APP SETUP
+# APP
 # =========================
 
 app = FastAPI(title="BayaPathLab")
@@ -69,45 +67,40 @@ app = FastAPI(title="BayaPathLab")
 Base.metadata.create_all(bind=engine)
 
 # =========================
-# DIRECTORIES
+# FILES
 # =========================
 
 os.makedirs("uploads", exist_ok=True)
-os.makedirs("static/css", exist_ok=True)
-os.makedirs("static/js", exist_ok=True)
 
-# =========================
-# STATIC FILES
-# =========================
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(BASE_DIR, "static")),
+    name="static"
+    )
 
 templates = Jinja2Templates(directory="templates")
+
+UPLOAD_DIR = os.path.abspath("uploads")
 
 # =========================
 # SECURITY
 # =========================
 
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"
-)
-reset_tokens = {}
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
-ALLOWED_EXTENSIONS = {
-    "jpg",
-    "jpeg",
-    "png",
-    "webp"
-}
+reset_tokens = {}
+RESET_TOKEN_EXPIRE_MINUTES = 15
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_FILE_SIZE = 5 * 1024 * 1024
 
 # =========================
-# EMAIL CONFIG
+# EMAIL
 # =========================
 
 conf = ConnectionConfig(
@@ -122,7 +115,7 @@ conf = ConnectionConfig(
 )
 
 # =========================
-# DATABASE
+# DB
 # =========================
 
 def get_db():
@@ -133,7 +126,7 @@ def get_db():
         db.close()
 
 # =========================
-# SESSION HELPERS
+# SESSION
 # =========================
 
 def create_session(username: str):
@@ -141,96 +134,84 @@ def create_session(username: str):
 
 def verify_session(token: str):
     try:
-        username = serializer.loads(
-            token,
-            max_age=86400
-        )
-        return username
+        return serializer.loads(token, max_age=86400)
     except:
         return None
 
 # =========================
-# ADMIN CREATION
+# ADMIN HELPERS
 # =========================
 
 def ensure_admin_exists(db: Session):
-
     admin = db.query(Admin).first()
 
     if not admin:
-
-        admin_username = os.getenv("ADMIN_USERNAME", "admin")
-        admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
-
-        hashed_password = pwd_context.hash(admin_password)
-
         admin = Admin(
-            username=admin_username,
-            hashed_password=hashed_password
+            username=os.getenv("ADMIN_USERNAME", "admin"),
+            hashed_password=pwd_context.hash(os.getenv("ADMIN_PASSWORD", "admin123"))
         )
-
         db.add(admin)
         db.commit()
+        logger.info("Admin created")
 
-        print("✅ Default admin created")
+@app.on_event("startup")
+def startup():
+    db = SessionLocal()
+    try:
+        ensure_admin_exists(db)
+    finally:
+        db.close()
+
+# =========================
+# CURRENT ADMIN (FIXED AUTH)
+# =========================
+
+def get_current_admin(request: Request, db: Session):
+    token = request.cookies.get("admin_session")
+
+    if not token:
+        return None
+
+    username = verify_session(token)
+    if not username:
+        return None
+
+    return db.query(Admin).filter(Admin.username == username).first()
 
 # =========================
 # HOME
 # =========================
 
 @app.get("/", response_class=HTMLResponse)
-async def home(
-    request: Request,
-    db: Session = Depends(get_db)
-):
-
-    try:
-        tests = db.query(TestPoster).filter(
-            TestPoster.is_active == True
-        ).all()
-
-    except Exception as e:
-        print("HOME ERROR:", e)
-        tests = []
+async def home(request: Request, db: Session = Depends(get_db)):
+    tests = db.query(TestPoster).all()
 
     return templates.TemplateResponse(
         "index.html",
-        {
-            "request": request,
-            "tests": tests
-        }
+        {"request": request, "tests": tests}
     )
-
-# =========================
-# ADMIN REDIRECT
-# =========================
-
 @app.get("/admin")
-async def admin_redirect():
-
-    return RedirectResponse(
-        url="/admin/login",
-        status_code=302
-    )
+async def admin(request: Request):
+    return RedirectResponse(url="/admin/login", status_code=303)
+    
 
 # =========================
-# LOGIN PAGE
+# LOGIN PAGE (FORCE LOGOUT)
 # =========================
 
 @app.get("/admin/login", response_class=HTMLResponse)
 async def login_page(request: Request):
 
-    return templates.TemplateResponse(
-        "login.html",
-        {"request": request}
-    )
+    response = templates.TemplateResponse("login.html", {"request": request})
+    response.delete_cookie("admin_session")  # 🔥 force logout
+    return response
 
 # =========================
-# ADMIN LOGIN
+# LOGIN
 # =========================
 
 @app.post("/admin/login")
-async def admin_login(
+async def login(
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
@@ -238,37 +219,18 @@ async def admin_login(
 
     ensure_admin_exists(db)
 
-    admin = db.query(Admin).filter(
-        Admin.username == username
-    ).first()
+    admin = db.query(Admin).filter(Admin.username == username).first()
 
-    if not admin:
+    if not admin or not pwd_context.verify(password, admin.hashed_password):
+        return RedirectResponse("/admin/login", status_code=303)
 
-        return RedirectResponse(
-            url="/admin/login",
-            status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    if not pwd_context.verify(
-        password,
-        admin.hashed_password
-    ):
-
-        return RedirectResponse(
-            url="/admin/login",
-            status_code=status.HTTP_303_SEE_OTHER
-        )
-
-    response = RedirectResponse(
-        url="/admin/dashboard",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
+    response = RedirectResponse("/admin/dashboard", status_code=303)
 
     response.set_cookie(
         key="admin_session",
         value=create_session(username),
         httponly=True,
-        secure=True,
+        secure=ENV == "production",
         samesite="lax",
         max_age=86400
     )
@@ -276,62 +238,23 @@ async def admin_login(
     return response
 
 # =========================
-# LOGOUT
-# =========================
-
-@app.get("/admin/logout")
-async def logout():
-
-    response = RedirectResponse(
-        url="/admin/login",
-        status_code=303
-    )
-
-    response.delete_cookie("admin_session")
-
-    return response
-
-# =========================
-# DASHBOARD
+# DASHBOARD (FIXED BYPASS)
 # =========================
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
-async def admin_dashboard(
-    request: Request,
-    db: Session = Depends(get_db)
-):
+async def dashboard(request: Request, db: Session = Depends(get_db)):
 
-    token = request.cookies.get("admin_session")
+    admin = get_current_admin(request, db)
 
-    if not token or not verify_session(token):
+    if not admin:
+        return RedirectResponse("/admin/login", status_code=303)
 
-        return RedirectResponse(
-            url="/admin/login",
-            status_code=303
-        )
-
-    try:
-
-        tests = db.query(TestPoster).all()
-
-        enquiries = db.query(Enquiry).order_by(
-            Enquiry.created_at.desc()
-        ).limit(50).all()
-
-    except Exception as e:
-
-        print("DASHBOARD ERROR:", e)
-
-        tests = []
-        enquiries = []
+    tests = db.query(TestPoster).all()
+    enquiries = db.query(Enquiry).order_by(Enquiry.id.desc()).limit(50).all()
 
     return templates.TemplateResponse(
         "admin.html",
-        {
-            "request": request,
-            "tests": tests,
-            "enquiries": enquiries
-        }
+        {"request": request, "tests": tests, "enquiries": enquiries}
     )
 
 # =========================
@@ -342,215 +265,67 @@ async def admin_dashboard(
 async def add_test(
     request: Request,
     test_name: str = Form(...),
-    mrp_price: float = Form(...),   # NEW
+    mrp_price: float = Form(...),
     price: float = Form(...),
     description: str = Form(""),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
 
-    token = request.cookies.get("admin_session")
+    admin = get_current_admin(request, db)
+    if not admin:
+        return RedirectResponse("/admin/login", status_code=303)
 
-    if not token or not verify_session(token):
+    ext = file.filename.split(".")[-1].lower()
 
-        return RedirectResponse(
-            url="/admin/login",
-            status_code=303
-        )
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, "Invalid file type")
 
-    try:
+    if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
+        raise HTTPException(400, "Invalid image type")
 
-        ext = file.filename.split(".")[-1].lower()
+    contents = await file.read()
 
-        if ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid file type"
-            )
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(400, "File too large")
 
-        if file.content_type not in [
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-        ]:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid image type"
-            )
+    filename = f"{secrets.token_hex(16)}.{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
 
-        contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
 
-        if len(contents) > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail="File too large"
-            )
-
-        filename = f"{secrets.token_hex(16)}.{ext}"
-
-        file_path = f"uploads/{filename}"
-
-        with open(file_path, "wb") as buffer:
-            buffer.write(contents)
-
-        test = TestPoster(
-            test_name=test_name[:100],
-            mrp_price=mrp_price,   # NEW
-            price=price,
-            description=description[:1000],
-            image_path=f"/uploads/{filename}"
-        )
-
-        db.add(test)
-        db.commit()
-
-        print(f"✅ Added test: {test_name}")
-
-    except Exception as e:
-
-        print("ADD TEST ERROR:", e)
-
-        db.rollback()
-
-    return RedirectResponse(
-        url="/admin/dashboard",
-        status_code=status.HTTP_303_SEE_OTHER
+    test = TestPoster(
+        test_name=test_name[:100],
+        mrp_price=mrp_price,
+        price=price,
+        description=description[:1000],
+        image_path=f"/uploads/{filename}"
     )
 
-# =========================
-# DELETE TEST
-# =========================
+    db.add(test)
+    db.commit()
 
-@app.post("/admin/delete-test/{test_id}")
-async def delete_test(
-    test_id: int,
-    request: Request,
-    db: Session = Depends(get_db)
-):
+    logger.info("Test added")
 
-    token = request.cookies.get("admin_session")
-
-    if not token or not verify_session(token):
-
-        raise HTTPException(
-            status_code=401,
-            detail="Unauthorized"
-        )
-
-    try:
-
-        test = db.query(TestPoster).filter(
-            TestPoster.id == test_id
-        ).first()
-
-        if test:
-
-            file_path = "." + test.image_path
-
-            if os.path.exists(file_path):
-                os.remove(file_path)
-
-            db.delete(test)
-            db.commit()
-
-            print(f"✅ Deleted test ID: {test_id}")
-
-    except Exception as e:
-
-        print("DELETE ERROR:", e)
-
-        db.rollback()
-
-    return RedirectResponse(
-        url="/admin/dashboard",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
+    return RedirectResponse("/admin/dashboard", status_code=303)
 
 # =========================
-# ENQUIRY
+# CHATBOT (NON BLOCKING)
 # =========================
-
-@app.post("/enquiry")
-async def submit_enquiry(
-    patient_name: str = Form(...),
-    phone: str = Form(...),
-    email: str = Form(""),
-    test_name: str = Form(""),
-    message: str = Form(""),
-    db: Session = Depends(get_db)
-):
-
-    try:
-
-        enquiry = Enquiry(
-            patient_name=patient_name[:100],
-            phone=phone[:15],
-            email=email[:100],
-            test_name=test_name[:100],
-            message=message[:1000]
-        )
-
-        db.add(enquiry)
-        db.commit()
-
-        print(f"✅ New enquiry: {patient_name}")
-
-    except Exception as e:
-
-        print("ENQUIRY ERROR:", e)
-
-        db.rollback()
-
-    return RedirectResponse(
-        url="/",
-        status_code=status.HTTP_303_SEE_OTHER
-    )
-
-# =========================
-# CHATBOT
-# =========================
-
-class ChatRequest:
-    def __init__(self, message: str):
-        self.message = message
 
 @app.post("/chat")
 async def chat(request: Request):
 
-    try:
+    data = await request.json()
+    message = data.get("message", "")
 
-        data = await request.json()
+    if not message:
+        raise HTTPException(400, "Message required")
 
-        message = data.get("message", "")
+    reply = await run_in_threadpool(get_ai_response, message)
 
-        if not message:
-            raise HTTPException(
-                status_code=400,
-                detail="Message required"
-            )
-
-        if len(message) > 1000:
-            raise HTTPException(
-                status_code=400,
-                detail="Message too long"
-            )
-
-        reply = get_ai_response(message)
-
-        return JSONResponse({
-            "reply": reply
-        })
-
-    except Exception as e:
-
-        print("CHAT ERROR:", e)
-
-        return JSONResponse(
-            {
-                "reply": "Sorry, AI service is temporarily unavailable."
-            },
-            status_code=500
-        )
+    return JSONResponse({"reply": reply})
 
 # =========================
 # FORGOT PASSWORD
@@ -559,43 +334,27 @@ async def chat(request: Request):
 @app.get("/admin/forgot-password")
 async def forgot_password(db: Session = Depends(get_db)):
 
-    # ✅ ALWAYS fetch admin safely (NO username dependency)
     admin = db.query(Admin).first()
 
-    if not admin:
-        return {"error": "Admin not found in DB"}
-
-    # generate token
     token = secrets.token_urlsafe(32)
 
-    # store using STABLE ID
     reset_tokens[token] = {
         "admin_id": admin.id,
-        "expires_at": datetime.utcnow() + timedelta(minutes=15)
+        "expires_at": datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
     }
-    BASE_URL = os.getenv("BASE_URL","http://127.0.0.1:8000")
 
-    reset_link = f"{BASE_URL}/reset-password/{token}"
-
-    
+    link = f"{BASE_URL}/reset-password/{token}"
 
     message = MessageSchema(
         subject="Reset Password",
         recipients=[os.getenv("MAIL_FROM")],
-        body=f"""
-Click below to reset your password:
-
-{reset_link}
-
-Valid for 15 minutes.
-""",
+        body=f"Reset link:\n\n{link}",
         subtype="plain"
     )
 
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await FastMail(conf).send_message(message)
 
-    return {"message": "Reset link sent successfully"}
+    return {"message": "sent"}
 
 # =========================
 # RESET PAGE
@@ -606,22 +365,16 @@ async def reset_page(request: Request, token: str):
 
     data = reset_tokens.get(token)
 
-    if not data:
-        return HTMLResponse("Invalid or expired token", status_code=400)
-
-    if data["expires_at"] < datetime.utcnow():
-        return HTMLResponse("Token expired", status_code=400)
+    if not data or data["expires_at"] < datetime.utcnow():
+        return HTMLResponse("Invalid/Expired", status_code=400)
 
     return templates.TemplateResponse(
         "reset_password.html",
-        {
-            "request": request,
-            "token": token
-        }
+        {"request": request, "token": token}
     )
 
 # =========================
-# UPDATE PASSWORD (SAFE ID BASED)
+# RESET PASSWORD
 # =========================
 
 @app.post("/reset-password")
@@ -639,36 +392,24 @@ async def reset_password(
         return {"error": "Invalid token"}
 
     if data["expires_at"] < datetime.utcnow():
-        return {"error": "Token expired"}
+        return {"error": "Expired"}
 
     if new_password != confirm_password:
-        return {"error": "Passwords do not match"}
+        return {"error": "Mismatch"}
 
-    # ✅ IMPORTANT: USE ID NOT USERNAME
-    admin = db.query(Admin).filter(
-        Admin.id == data["admin_id"]
-    ).first()
+    admin = db.query(Admin).filter(Admin.id == data["admin_id"]).first()
 
-    if not admin:
-        return {"error": "Admin not found"}
-
-    # username CAN change safely
     admin.username = username
-
     admin.hashed_password = pwd_context.hash(new_password)
 
     db.commit()
 
-    # remove token after use
     del reset_tokens[token]
 
-    return RedirectResponse(
-        url="/admin/login",
-        status_code=303
-    )
+    return RedirectResponse("/admin/login", status_code=303)
 
 # =========================
-# HEALTH CHECK
+# HEALTH
 # =========================
 
 @app.get("/health")
