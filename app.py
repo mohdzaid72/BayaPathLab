@@ -3,6 +3,7 @@ import secrets
 import logging
 
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
@@ -13,8 +14,7 @@ from fastapi import (
     Form,
     File,
     UploadFile,
-    Request,
-    status
+    Request
 )
 
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -37,14 +37,12 @@ from llm import get_ai_response
 # =========================
 # LOGGING
 # =========================
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("bayapathlab")
 
 # =========================
 # ENV
 # =========================
-
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -61,63 +59,48 @@ BASE_URL = os.getenv(
 # =========================
 # APP
 # =========================
-
 app = FastAPI(title="BayaPathLab")
 
 Base.metadata.create_all(bind=engine)
 
 # =========================
-# FILES
+# FILE SYSTEM
 # =========================
-
-os.makedirs("uploads", exist_ok=True)
-
-
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.abspath("uploads")
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(BASE_DIR, "static")),
     name="static"
-    )
+)
+
+# ✅ IMPORTANT FIX: serve uploads
+app.mount(
+    "/uploads",
+    StaticFiles(directory=UPLOAD_DIR),
+    name="uploads"
+)
 
 templates = Jinja2Templates(directory="templates")
-
-UPLOAD_DIR = os.path.abspath("uploads")
 
 # =========================
 # SECURITY
 # =========================
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
-reset_tokens = {}
 RESET_TOKEN_EXPIRE_MINUTES = 15
+reset_tokens = {}
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
 # =========================
-# EMAIL
-# =========================
-
-conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
-)
-
-# =========================
 # DB
 # =========================
-
 def get_db():
     db = SessionLocal()
     try:
@@ -128,7 +111,6 @@ def get_db():
 # =========================
 # SESSION
 # =========================
-
 def create_session(username: str):
     return serializer.dumps(username)
 
@@ -141,10 +123,8 @@ def verify_session(token: str):
 # =========================
 # ADMIN HELPERS
 # =========================
-
 def ensure_admin_exists(db: Session):
     admin = db.query(Admin).first()
-
     if not admin:
         admin = Admin(
             username=os.getenv("ADMIN_USERNAME", "admin"),
@@ -152,7 +132,6 @@ def ensure_admin_exists(db: Session):
         )
         db.add(admin)
         db.commit()
-        logger.info("Admin created")
 
 @app.on_event("startup")
 def startup():
@@ -162,13 +141,8 @@ def startup():
     finally:
         db.close()
 
-# =========================
-# CURRENT ADMIN (FIXED AUTH)
-# =========================
-
 def get_current_admin(request: Request, db: Session):
     token = request.cookies.get("admin_session")
-
     if not token:
         return None
 
@@ -181,34 +155,23 @@ def get_current_admin(request: Request, db: Session):
 # =========================
 # HOME
 # =========================
-
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):
     tests = db.query(TestPoster).all()
+    return templates.TemplateResponse("index.html", {"request": request, "tests": tests})
 
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "tests": tests}
-    )
 @app.get("/admin")
-async def admin(request: Request):
-    return RedirectResponse(url="/admin/login", status_code=303)
-    
-
-# =========================
-# LOGIN PAGE (FORCE LOGOUT)
-# =========================
-
-@app.get("/admin/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-
-    response = templates.TemplateResponse("login.html", {"request": request})
-    response.delete_cookie("admin_session")  # 🔥 force logout
-    return response
+async def admin():
+    return RedirectResponse("/admin/login", status_code=303)
 
 # =========================
 # LOGIN
 # =========================
+@app.get("/admin/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    response = templates.TemplateResponse("login.html", {"request": request})
+    response.delete_cookie("admin_session")
+    return response
 
 @app.post("/admin/login")
 async def login(
@@ -216,7 +179,6 @@ async def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-
     ensure_admin_exists(db)
 
     admin = db.query(Admin).filter(Admin.username == username).first()
@@ -238,19 +200,21 @@ async def login(
     return response
 
 # =========================
-# DASHBOARD (FIXED BYPASS)
+# DASHBOARD
 # =========================
-
 @app.get("/admin/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, db: Session = Depends(get_db)):
-
     admin = get_current_admin(request, db)
-
     if not admin:
         return RedirectResponse("/admin/login", status_code=303)
 
     tests = db.query(TestPoster).all()
     enquiries = db.query(Enquiry).order_by(Enquiry.id.desc()).limit(50).all()
+
+    enquiries = db.query(Enquiry).order_by(Enquiry.id.desc()).limit(50).all()
+    for e in enquiries:
+        if e.created_at:
+            e.created_at = e.created_at.astimezone(ZoneInfo("Asia/Kolkata"))
 
     return templates.TemplateResponse(
         "admin.html",
@@ -260,7 +224,6 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 # =========================
 # ADD TEST
 # =========================
-
 @app.post("/admin/add-test")
 async def add_test(
     request: Request,
@@ -271,7 +234,6 @@ async def add_test(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-
     admin = get_current_admin(request, db)
     if not admin:
         return RedirectResponse("/admin/login", status_code=303)
@@ -306,17 +268,45 @@ async def add_test(
     db.add(test)
     db.commit()
 
-    logger.info("Test added")
+    return RedirectResponse("/admin/dashboard", status_code=303)
+
+# =========================
+# DELETE TEST (FIXED)
+# =========================
+@app.post("/admin/delete-test/{test_id}")
+async def delete_test(
+    test_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin = get_current_admin(request, db)
+    if not admin:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    test = db.query(TestPoster).filter(TestPoster.id == test_id).first()
+
+    if not test:
+        raise HTTPException(404, "Test not found")
+
+    # delete image file safely
+    if test.image_path:
+        try:
+            file_path = os.path.join(UPLOAD_DIR, os.path.basename(test.image_path))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.warning(f"File delete failed: {e}")
+
+    db.delete(test)
+    db.commit()
 
     return RedirectResponse("/admin/dashboard", status_code=303)
 
 # =========================
-# CHATBOT (NON BLOCKING)
+# CHATBOT
 # =========================
-
 @app.post("/chat")
 async def chat(request: Request):
-
     data = await request.json()
     message = data.get("message", "")
 
@@ -328,90 +318,35 @@ async def chat(request: Request):
     return JSONResponse({"reply": reply})
 
 # =========================
-# FORGOT PASSWORD
-# =========================
-
-@app.get("/admin/forgot-password")
-async def forgot_password(db: Session = Depends(get_db)):
-
-    admin = db.query(Admin).first()
-
-    token = secrets.token_urlsafe(32)
-
-    reset_tokens[token] = {
-        "admin_id": admin.id,
-        "expires_at": datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
-    }
-
-    link = f"{BASE_URL}/reset-password/{token}"
-
-    message = MessageSchema(
-        subject="Reset Password",
-        recipients=[os.getenv("MAIL_FROM")],
-        body=f"Reset link:\n\n{link}",
-        subtype="plain"
-    )
-
-    await FastMail(conf).send_message(message)
-
-    return {"message": "sent"}
-
-# =========================
-# RESET PAGE
-# =========================
-
-@app.get("/reset-password/{token}", response_class=HTMLResponse)
-async def reset_page(request: Request, token: str):
-
-    data = reset_tokens.get(token)
-
-    if not data or data["expires_at"] < datetime.utcnow():
-        return HTMLResponse("Invalid/Expired", status_code=400)
-
-    return templates.TemplateResponse(
-        "reset_password.html",
-        {"request": request, "token": token}
-    )
-
-# =========================
-# RESET PASSWORD
-# =========================
-
-@app.post("/reset-password")
-async def reset_password(
-    token: str = Form(...),
-    username: str = Form(...),
-    new_password: str = Form(...),
-    confirm_password: str = Form(...),
-    db: Session = Depends(get_db)
-):
-
-    data = reset_tokens.get(token)
-
-    if not data:
-        return {"error": "Invalid token"}
-
-    if data["expires_at"] < datetime.utcnow():
-        return {"error": "Expired"}
-
-    if new_password != confirm_password:
-        return {"error": "Mismatch"}
-
-    admin = db.query(Admin).filter(Admin.id == data["admin_id"]).first()
-
-    admin.username = username
-    admin.hashed_password = pwd_context.hash(new_password)
-
-    db.commit()
-
-    del reset_tokens[token]
-
-    return RedirectResponse("/admin/login", status_code=303)
-
-# =========================
 # HEALTH
 # =========================
-
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+
+@app.post("/enquiry")
+async def create_enquiry(
+    patient_name: str = Form(...),
+    phone: str = Form(...),
+    email: str = Form(None),
+    test_name: str = Form(None),
+    message: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    if not patient_name or not phone:
+        raise HTTPException(400, "Name and phone required")
+
+    enquiry = Enquiry(
+        patient_name=patient_name[:100],
+        phone=phone[:20],
+        email=email[:100] if email else None,
+        test_name=test_name[:200] if test_name else None,
+        message=message[:1000] if message else None
+    )
+
+    db.add(enquiry)
+    db.commit()
+
+    return RedirectResponse("/", status_code=303)
