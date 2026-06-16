@@ -1,6 +1,6 @@
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from langchain_core.messages import HumanMessage, SystemMessage
-import os
+import os, re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,7 +18,7 @@ SYSTEM_PROMPT = """
 You are a professional and safe AI assistant for BayaPathLab.
 
 📍 Location:
-BayaPathLab is located in Kelakhera, District U.S. Nagar, Uttarakhand, India.
+BayaPathLab is located in Near Thana, Kelakhera, District U.S. Nagar, Uttarakhand, India.
 
 👨‍⚕️ Owner:
 Dr. Sukhdev Singh
@@ -73,17 +73,366 @@ Dr. Sukhdev Singh
 - Short
 - Human-like (not robotic)
 """
+lab_tests=[
+    {
+      "name": "ABSOLUTE EOSINOPHILS COUNT (AEC)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "ALBUMIN SERUM",
+      "price": 70,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "ALKALINE PHOSPHATASE (ALP)",
+      "price": 120,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "AMYLASE, SERUM",
+      "price": 300,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BILIRUBIN TOTAL",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BILIRUBIN DIRECT",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BILIRUBIN INDIRECT",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BLEEDING TIME (BT)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BLOOD GROUPING (ABO) & RH FACTOR",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BLOOD UREA NITROGEN (BUN)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "CALCIUM, SERUM",
+      "price": 150,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "CALCIUM, IONIZED",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "C. HDL CHOLESTEROL TOTAL",
+      "price": 150,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "CLOTTING TIME (CT)",
+      "price": 120,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "COMPLETE BLOOD COUNT (CBC)",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "C-REACTIVE PROTEIN (CRP)",
+      "price": 350,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "CREATININE, SERUM",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "DENGUE FEVER COMB. PANEL NS1 Ag ANTIBODY IgG & IgM",
+      "price": 800,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "DLC",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "ELECTROLYTES (Na, K, Ca) SERUM",
+      "price": 300,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "ERYTHROCYTE SEDIMENTATION RATE (ESR) WINTROBE",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "GLUCOSE TOLERANCE TEST (GTT) 4 BLOOD & URINE SAMPLE",
+      "price": 320,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
+      "price": 500,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HAEMOGLOBIN (HB%)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HB%, TLC, DLC, ESR",
+      "price": 180,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HEMOGRAM (CBC & ESR)",
+      "price": 300,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HBsAg",
+      "price": 200,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HCV",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HIV 1/2",
+      "price": 200,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "KIDNEY FUNCTION TEST (KFT/RFT)",
+      "price": 650,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "LIPASE, SERUM",
+      "price": 620,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "LIPID PROFILE",
+      "price": 400,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "LIVER FUNCTION TEST (LFT)",
+      "price": 450,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SGOT (AST)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SGPT (ALT)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "VITAMIN D 25 HYDROXY",
+      "price": 1530,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "VITAMIN B12 (CYANOCOBALAMIN)",
+      "price": 1180,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "IRON STUDIES",
+      "price": 550,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "TESTOSTERONE, TOTAL",
+      "price": 700,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HEPATITIS C VIRAL RNA (HCV RNA) QUANTITATIVE ULTRA",
+      "price": 1800,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HEPATITIS B SURFACE ANTIGEN (HBsAg), QUANTITATIVE",
+      "price": 1800,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BAYA PANEL - 1",
+      "price": 1100,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "BAYA PANEL - 2",
+      "price": 1400,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "IMMUNOGLOBULIN IgE",
+      "price": 900,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "SU - SW - 1",
+      "price": 1050,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "SU - SW - 2",
+      "price": 1350,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "SU - SW - 3",
+      "price": 1750,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "SU - SW - 4",
+      "price": 2350,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "COMPLETE ALLERGY PANEL",
+      "price": 5500,
+      "pre_test_guideline": "No special preparation required"
+    }
+]
+def search_lab_test(user_input):
 
+    query = user_input.lower()
+
+    query = re.sub(
+        r"[^a-z0-9 ]",
+        "",
+        query
+    )
+
+
+    # Only search if user is asking about tests/prices
+
+    keywords = [
+        "price",
+        "rate",
+        "cost",
+        "test",
+        "fasting",
+        "preparation",
+        "charge",
+        "rupee",
+        "₹"
+    ]
+
+    is_test_question = any(
+        word in query for word in keywords
+    )
+
+
+    if not is_test_question:
+        return None
+
+
+
+    aliases = {
+        "cbc": "COMPLETE BLOOD COUNT (CBC)",
+        "vit d": "VITAMIN D 25 HYDROXY",
+        "b12": "VITAMIN B12 (CYANOCOBALAMIN)",
+        "lft": "LIVER FUNCTION TEST (LFT)",
+        "kft": "KIDNEY FUNCTION TEST (KFT/RFT)",
+        "hba1c": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
+        "lipid": "LIPID PROFILE"
+    }
+
+
+    for key, value in aliases.items():
+
+        if key in query:
+
+            for test in lab_tests:
+
+                if value.lower() == test["name"].lower():
+                    return test
+
+
+
+    for test in lab_tests:
+
+        name = test["name"].lower()
+
+        # exact test name matching
+
+        if name in query:
+            return test
+
+
+    return None
+
+
+# =========================
+# MAIN CHAT FUNCTION
+# =========================
 
 def get_ai_response(user_input: str):
-    
-    print(f"user:{user_input}")
+
+    print("User:", user_input)
+
+
+    # FIRST: Check BAYA PATH LAB DATABASE
+
+    lab_result = search_lab_test(user_input)
+
+
+    if lab_result:
+
+        reply = f"""
+BAYA PATH LAB Investigation Details
+
+Test:
+{lab_result['name']}
+
+Rate:
+₹{lab_result['price']}
+
+Pre-test Guideline:
+{lab_result['pre_test_guideline']}
+"""
+
+        return reply.strip()
+
+
+
+    # SECOND: Use AI model
+
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(content=user_input)
     ]
 
+
     response = chat_model.invoke(messages)
-    print(response.content)
-    
+
+    print("AI:", response.content)
+
     return response.content
