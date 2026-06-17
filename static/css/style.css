@@ -860,3 +860,101 @@ body {
     font-weight:700;
 }
 
+
+
+/* =========================
+   DOWNLOAD SERVICES PDF BUTTON
+========================= */
+
+.download-services {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 45px;
+    margin-bottom: 20px;
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    background: linear-gradient(
+        135deg,
+        #667eea 0%,
+        #b52826 100%
+    );
+
+    color: white;
+    text-decoration: none;
+
+    padding: 14px 35px;
+
+    border-radius: 50px;
+
+    font-size: 1rem;
+    font-weight: 600;
+
+    box-shadow:
+        0 10px 30px rgba(102,126,234,0.35);
+
+    transition: all 0.3s ease;
+
+    border: none;
+    cursor: pointer;
+}
+
+
+.download-btn:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 15px 40px rgba(181,40,38,0.35);
+
+    background: linear-gradient(
+        135deg,
+        #764ba2 0%,
+        #ff6b6b 100%
+    );
+}
+
+
+.download-btn:active {
+    transform: scale(0.96);
+}
+
+
+/* PDF Icon */
+.download-btn::before {
+    content: "📄";
+    font-size: 1.2rem;
+}
+
+
+
+/* =========================
+   MOBILE DOWNLOAD BUTTON
+========================= */
+
+@media (max-width:768px){
+
+    .download-services {
+        margin-top:30px;
+    }
+
+
+    .download-btn {
+
+        width:90%;
+
+        padding:12px 20px;
+
+        font-size:14px;
+
+        border-radius:30px;
+
+    }
+
+}

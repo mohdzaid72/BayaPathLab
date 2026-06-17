@@ -356,13 +356,23 @@ def search_lab_test(user_input):
 
 
     aliases = {
-        "cbc": "COMPLETE BLOOD COUNT (CBC)",
-        "vit d": "VITAMIN D 25 HYDROXY",
-        "b12": "VITAMIN B12 (CYANOCOBALAMIN)",
-        "lft": "LIVER FUNCTION TEST (LFT)",
-        "kft": "KIDNEY FUNCTION TEST (KFT/RFT)",
-        "hba1c": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
-        "lipid": "LIPID PROFILE"
+    "cbc": "COMPLETE BLOOD COUNT (CBC)",
+    "vit d": "VITAMIN D 25 HYDROXY",
+    "vitamin d": "VITAMIN D 25 HYDROXY",
+    "b12": "VITAMIN B12 (CYANOCOBALAMIN)",
+    "vitamin b12": "VITAMIN B12 (CYANOCOBALAMIN)",
+    "lft": "LIVER FUNCTION TEST (LFT)",
+    "liver": "LIVER FUNCTION TEST (LFT)",
+    "kft": "KIDNEY FUNCTION TEST (KFT/RFT)",
+    "kidney": "KIDNEY FUNCTION TEST (KFT/RFT)",
+    "hba1c": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
+    "lipid": "LIPID PROFILE",
+
+    # ADD THESE
+    "urea": "BLOOD UREA NITROGEN (BUN)",
+    "bun": "BLOOD UREA NITROGEN (BUN)",
+    "creatinine": "CREATININE, SERUM",
+    "sugar": "GLUCOSE TOLERANCE TEST (GTT) 4 BLOOD & URINE SAMPLE"
     }
 
 
@@ -379,11 +389,15 @@ def search_lab_test(user_input):
 
     for test in lab_tests:
 
-        name = test["name"].lower()
+      name = test["name"].lower()
 
-        # exact test name matching
+      words = name.split()
 
-        if name in query:
+    # partial word matching
+
+      for word in words:
+
+        if len(word) > 3 and word in query:
             return test
 
 
@@ -432,6 +446,9 @@ Pre-test Guideline:
 
 
     response = chat_model.invoke(messages)
+
+    if "price" in user_input.lower() or "cost" in user_input.lower():
+      return "Sorry, please contact BayaPathLab for exact test price details."
 
     print("AI:", response.content)
 
