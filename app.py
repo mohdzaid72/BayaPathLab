@@ -321,6 +321,38 @@ async def add_test(
     return RedirectResponse("/admin/dashboard", status_code=303)
 
 # =========================
+# DELETE TEST (FIXED)
+# =========================
+@app.post("/admin/delete-test/{test_id}")
+async def delete_test(
+    test_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin = get_current_admin(request, db)
+    if not admin:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    test = db.query(TestPoster).filter(TestPoster.id == test_id).first()
+
+    if not test:
+        raise HTTPException(404, "Test not found")
+
+    # delete image file safely
+    if test.image_path:
+        try:
+            file_path = os.path.join(UPLOAD_DIR, os.path.basename(test.image_path))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            logger.warning(f"File delete failed: {e}")
+
+    db.delete(test)
+    db.commit()
+
+    return RedirectResponse("/admin/dashboard", status_code=303)
+
+# =========================
 # CHATBOT (NON BLOCKING)
 # =========================
 
@@ -425,3 +457,28 @@ async def reset_password(
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.post("/enquiry")
+async def create_enquiry(
+    patient_name: str = Form(...),
+    phone: str = Form(...),
+    email: str = Form(None),
+    test_name: str = Form(None),
+    message: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    if not patient_name or not phone:
+        raise HTTPException(400, "Name and phone required")
+
+    enquiry = Enquiry(
+        patient_name=patient_name[:100],
+        phone=phone[:20],
+        email=email[:100] if email else None,
+        test_name=test_name[:200] if test_name else None,
+        message=message[:1000] if message else None
+    )
+
+    db.add(enquiry)
+    db.commit()
+
+    return RedirectResponse("/", status_code=303)
