@@ -76,19 +76,25 @@ Base.metadata.create_all(bind=engine)
 
 os.makedirs("uploads", exist_ok=True)
 
-
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app.mount(
     "/static",
     StaticFiles(directory=os.path.join(BASE_DIR, "static")),
     name="static"
-    )
+)
 
-templates = Jinja2Templates(directory="templates")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
-UPLOAD_DIR = os.path.abspath("uploads")
+app.mount(
+    "/uploads",
+    StaticFiles(directory=UPLOAD_DIR),
+    name="uploads"
+)
+
+templates = Jinja2Templates(
+    directory=os.path.join(BASE_DIR, "templates")
+)
 
 # =========================
 # SECURITY
