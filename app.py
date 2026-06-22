@@ -595,39 +595,32 @@ async def create_enquiry(
 
 
 
-@app.get("/robots.txt", response_class=PlainTextResponse)
-def robots():
-    return """
-User-agent: *
-Allow: /
-
-Disallow: /admin
-Disallow: /reset-password
-
-Sitemap:
-https://www.bayapathlab.com/sitemap.xml
-"""
-
-
 @app.get("/sitemap.xml")
 def sitemap():
-
-    xml="""
-<?xml version="1.0" encoding="UTF-8"?>
-
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-<url>
-<loc>https://www.bayapathlab.com/</loc>
-<lastmod>2026-06-20</lastmod>
-<changefreq>weekly</changefreq>
-<priority>1.0</priority>
-</url>
-
-</urlset>
-"""
+    <url>
+        <loc>https://www.bayapathlab.com/</loc>
+        <lastmod>2026-06-20</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>"""
 
     return Response(
         content=xml,
         media_type="application/xml"
+    )
+
+
+@app.get("/robots.txt")
+def robots():
+    txt = """User-agent: *
+Allow: /
+
+Sitemap: https://www.bayapathlab.com/sitemap.xml"""
+
+    return Response(
+        content=txt,
+        media_type="text/plain"
     )
