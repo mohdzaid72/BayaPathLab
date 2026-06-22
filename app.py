@@ -2,6 +2,8 @@ import os
 import secrets
 import logging
 
+from fastapi.responses import Response, PlainTextResponse
+
 from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
@@ -16,7 +18,7 @@ from fastapi import (
     Request,
     status
 )
-
+import requests
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -32,7 +34,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from database import SessionLocal, engine
 from models import Base, TestPoster, Enquiry, Admin
 
-from llm import get_ai_response
+from demollm import get_ai_response
 
 # =========================
 # LOGGING
@@ -57,7 +59,7 @@ BASE_URL = os.getenv("BASE_URL")
 
 if not BASE_URL:
     BASE_URL = (
-        "https://bayapathlab.com"
+        "https://www.bayapathlab.com"
         if ENV == "production"
         else "http://127.0.0.1:8000"
     )
@@ -123,6 +125,104 @@ conf = ConnectionConfig(
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True
 )
+
+# =========================
+# WHATSAPP NOTIFICATION
+# =========================
+
+def send_whatsapp_enquiry(enquiry):
+
+    token = os.getenv("WHATSAPP_TOKEN")
+    phone_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+    admin_number = os.getenv("WHATSAPP_ADMIN_NUMBER")
+
+
+    if not token or not phone_id or not admin_number:
+        logger.warning(
+            "WhatsApp configuration missing"
+        )
+        return
+
+
+    version = os.getenv(
+    "WHATSAPP_API_VERSION",
+    "v23.0"
+    )
+
+    url = (
+        f"https://graph.facebook.com/"
+        f"{version}/{phone_id}/messages"
+    )
+
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+
+    message = f"""
+📩 *New BayaPathLab Enquiry*
+
+👤 Name:
+{enquiry.patient_name}
+
+📞 Phone:
+{enquiry.phone}
+
+📧 Email:
+{enquiry.email or "Not provided"}
+
+🧪 Test:
+{enquiry.test_name or "Not mentioned"}
+
+💬 Message:
+{enquiry.message or "No message"}
+"""
+
+
+    payload = {
+
+        "messaging_product": "whatsapp",
+
+        "to": admin_number,
+
+        "type": "text",
+
+        "text": {
+            "body": message
+        }
+    }
+
+
+    try:
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+
+
+        if not response.ok:
+
+            logger.error(
+                f"WhatsApp failed: {response.text}"
+            )
+
+        else:
+
+            logger.info(
+                "WhatsApp enquiry sent"
+            )
+
+
+    except Exception as e:
+
+        logger.exception(
+            f"WhatsApp Error: {e}"
+        )
 
 # =========================
 # DB
@@ -375,29 +475,32 @@ async def chat(request: Request):
 
 @app.get("/admin/forgot-password")
 async def forgot_password(db: Session = Depends(get_db)):
+    try:
+        admin = db.query(Admin).first()
 
-    admin = db.query(Admin).first()
+        token = secrets.token_urlsafe(32)
 
-    token = secrets.token_urlsafe(32)
+        reset_tokens[token] = {
+            "admin_id": admin.id,
+            "expires_at": datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+        }
 
-    reset_tokens[token] = {
-        "admin_id": admin.id,
-        "expires_at": datetime.utcnow() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
-    }
+        link = f"{BASE_URL}/reset-password/{token}"
 
-    link = f"{BASE_URL}/reset-password/{token}"
+        message = MessageSchema(
+            subject="Reset Password",
+            recipients=[os.getenv("MAIL_FROM")],
+            body=f"Reset link:\n\n{link}",
+            subtype="plain"
+        )
 
-    message = MessageSchema(
-        subject="Reset Password",
-        recipients=[os.getenv("MAIL_FROM")],
-        body=f"Reset link:\n\n{link}",
-        subtype="plain"
-    )
+        await FastMail(conf).send_message(message)
 
-    await FastMail(conf).send_message(message)
+        return {"message": "sent"}
 
-    return {"message": "sent"}
-
+    except Exception as e:
+        logger.exception("Forgot password error")
+        return {"error": str(e)}
 # =========================
 # RESET PAGE
 # =========================
@@ -481,4 +584,50 @@ async def create_enquiry(
     db.add(enquiry)
     db.commit()
 
+    db.refresh(enquiry)
+
+    await run_in_threadpool(
+        send_whatsapp_enquiry,
+        enquiry
+    )
+
     return RedirectResponse("/", status_code=303)
+
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots():
+    return """
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /reset-password
+
+Sitemap:
+https://www.bayapathlab.com/sitemap.xml
+"""
+
+
+@app.get("/sitemap.xml")
+def sitemap():
+
+    xml="""
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+<url>
+<loc>https://www.bayapathlab.com/</loc>
+<lastmod>2026-06-20</lastmod>
+<changefreq>weekly</changefreq>
+<priority>1.0</priority>
+</url>
+
+</urlset>
+"""
+
+    return Response(
+        content=xml,
+        media_type="application/xml"
+    )

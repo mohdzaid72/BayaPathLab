@@ -1,24 +1,20 @@
-from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
-from langchain_core.messages import HumanMessage, SystemMessage
-import os, re
+from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
 from dotenv import load_dotenv
-
-import requests
-
-
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
 load_dotenv()
-HF_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-llm = HuggingFaceEndpoint(
+
+llm= HuggingFaceEndpoint(
     repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="text-generation",
-    huggingfacehub_api_token=HF_TOKEN,
-    max_new_tokens=100,
+    task="text-generation"
 )
 
-chat_model = ChatHuggingFace(llm=llm)
+model = ChatHuggingFace(llm=llm)
 
-SYSTEM_PROMPT = """
+templates=ChatPromptTemplate.from_messages([
+                                           ("system", """
 You are a professional and safe AI assistant for BayaPathLab.
+BayaPathLab is a Diagnostic Laboratory
 
 📍 Location:
 BayaPathLab is located in Near Thana, Kelakhera, District U.S. Nagar, Uttarakhand, India.
@@ -75,9 +71,19 @@ Dr. Sukhdev Singh
 - Clear
 - Short
 - Human-like (not robotic)
-"""
-lab_tests=[
-    {
+"""),
+("human","""
+Context:
+{context}
+
+Question:
+{question}
+
+Answer the question based only on the provided context.
+                                           """)
+])
+
+context = """{
       "name": "ABSOLUTE EOSINOPHILS COUNT (AEC)",
       "price": 100,
       "pre_test_guideline": "No special preparation required"
@@ -144,7 +150,7 @@ lab_tests=[
     },
     {
       "name": "CLOTTING TIME (CT)",
-      "price": 120,
+      "price": 50,
       "pre_test_guideline": "Overnight fasting is mandatory"
     },
     {
@@ -322,190 +328,15 @@ lab_tests=[
       "price": 5500,
       "pre_test_guideline": "No special preparation required"
     }
-]
-
-def normalize(text):
-    text = text.lower()
-    text = re.sub(r'[^a-z0-9 ]', ' ', text)
-    return ' '.join(text.split())
-
-
-def get_abbreviations(name):
-    matches = re.findall(r'\((.*?)\)', name)
-
-    abbrs = []
-
-    for match in matches:
-        for part in match.split('/'):
-            abbrs.append(normalize(part))
-
-    return abbrs
-
-
-def search_lab_test(user_input):
-
-    query = normalize(user_input)
-
-    best_match = None
-    best_overlap = 0
-
-    for test in lab_tests:
-
-        test_name = normalize(test["name"])
-
-        # 1. Exact match
-        if query == test_name:
-            return test
-
-        # 2. Contains match
-        if query and query in test_name:
-            return test
-
-        # 3. Abbreviation match
-        abbrs = get_abbreviations(test["name"])
-
-        if query in abbrs:
-            return test
-
-        # 4. Token overlap scoring
-
-        query_words = set(query.split())
-
-        test_words = set(test_name.split())
-
-        overlap = len(
-            query_words.intersection(test_words)
-        )
-
-        if overlap > best_overlap:
-            best_overlap = overlap
-            best_match = test
-
-    # At least 1 meaningful word should match
-    if best_overlap > 0:
-        return best_match
-
-    return None
-
-    # Only search if user is asking about tests/prices
-
-    keywords = [
-        "price",
-        "rate",
-        "cost",
-        "test",
-        "fasting",
-        "preparation",
-        "charge",
-        "rupee",
-        "₹"
-    ]
-
-    is_test_question = any(
-        word in query for word in keywords
-    )
-
-
-    if not is_test_question:
-        return None
-
-
-
-    aliases = {
-    "cbc": "COMPLETE BLOOD COUNT (CBC)",
-    "vit d": "VITAMIN D 25 HYDROXY",
-    "vitamin d": "VITAMIN D 25 HYDROXY",
-    "b12": "VITAMIN B12 (CYANOCOBALAMIN)",
-    "vitamin b12": "VITAMIN B12 (CYANOCOBALAMIN)",
-    "lft": "LIVER FUNCTION TEST (LFT)",
-    "liver": "LIVER FUNCTION TEST (LFT)",
-    "kft": "KIDNEY FUNCTION TEST (KFT/RFT)",
-    "kidney": "KIDNEY FUNCTION TEST (KFT/RFT)",
-    "hba1c": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
-    "lipid": "LIPID PROFILE",
-
-    # ADD THESE
-    "urea": "BLOOD UREA NITROGEN (BUN)",
-    "bun": "BLOOD UREA NITROGEN (BUN)",
-    "creatinine": "CREATININE, SERUM",
-    "sugar": "GLUCOSE TOLERANCE TEST (GTT) 4 BLOOD & URINE SAMPLE"
-    }
-
-
-    for key, value in aliases.items():
-
-        if key in query:
-
-            for test in lab_tests:
-
-                if value.lower() == test["name"].lower():
-                    return test
-
-
-
-    for test in lab_tests:
-
-      name = test["name"].lower()
-
-      words = name.split()
-
-    # partial word matching
-
-      for word in words:
-
-        if len(word) > 3 and word in query:
-            return test
-
-
-    return None
-
-
-# =========================
-# MAIN CHAT FUNCTION
-# =========================
-
-def get_ai_response(user_input: str):
-
-    print("User:", user_input)
-
-
-    # FIRST: Check BAYA PATH LAB DATABASE
-
-    lab_result = search_lab_test(user_input)
-
-
-    if lab_result:
-
-        reply = f"""
-BAYA PATH LAB Investigation Details
-
-Test:
-{lab_result['name']}
-
-Rate:
-₹{lab_result['price']}
-
-Pre-test Guideline:
-{lab_result['pre_test_guideline']}
 """
+def get_ai_response(question: str):
+    
 
-        return reply.strip()
-
-
-
-    # SECOND: Use AI model
-
-    messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=user_input)
-    ]
-
-
-    response = chat_model.invoke(messages)
-
-    if "price" in user_input.lower() or "cost" in user_input.lower():
-      return "Sorry, please contact BayaPathLab for exact test price details."
-
-    print("AI:", response.content)
-
+    messege=templates.format_messages(
+        context=context,
+        question=question
+    )
+    print("\nAI:")
+    response=model.invoke(messege)
+    print(response.content)
     return response.content

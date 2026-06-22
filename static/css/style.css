@@ -1214,3 +1214,11 @@ body {
     }
 
 }
+
+.contact-icons {
+    z-index: 999;
+}
+
+#chat-box {
+    z-index: 100000;
+}

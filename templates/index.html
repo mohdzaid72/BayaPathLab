@@ -1,13 +1,17 @@
 {% extends "base.html" %}
-
+{% block title %}
+BayaPathLab - Best Pathology Lab & Blood Test Centre in Kelakhera Uttarakhand
+{% endblock %}
 {% block content %}
+
+
 
 <!-- Header -->
 <header class="header">
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <img src="/static/image/l.png" alt="BayaPathLab Logo" class="logo-icon">
+                <img src="/static/image/l.png" alt="BayaPathLab Pathology Laboratory Kelakhera Logo" class="logo-icon">
                 <h2> BayaPathLab</h2>
             </div>
             <ul class="nav-menu">
@@ -24,7 +28,7 @@
 <!-- Hero Section -->
 <section id="home" class="hero">
     <div class="hero-content">
-        <img src="/static/image/l.png" alt="BayaPathLab Logo" class="hero-logo">
+        <img src="/static/image/l.png" alt="BayaPathLab Pathology Laboratory Kelakhera Logo" class="hero-logo">
 
         <h1>Trusted Pathology Services</h1>
         <p>Kelakhera, Uttarakhand - Accurate & Reliable Test Results</p>
@@ -39,7 +43,7 @@
         <div class="tests-grid">
             {% for test in tests %}
             <div class="test-card book-test"data-test="{{ test.test_name }}">
-                <img src="{{ test.image_path }}" alt="{{ test.test_name }}" class="test-image">
+                <img src="{{ test.image_path }}" alt="{{ test.test_name }}blood test at BayaPathLab Kelakhera" class="test-image">
                 <div class="test-info">
                     <h3>{{ test.test_name }}</h3>
                     <div class="price-section">
@@ -175,7 +179,7 @@
                 <div class="form-group">
                     <textarea name="message" placeholder="Your Message" rows="4"></textarea>
                 </div>
-                <button type="submit" class="submit-btn">Send Enquiry</button>
+                <button type="submit" class="submit-btn" onclick="sendWhatsApp(event)">Send Enquiry</button>
             </form>
         </div>
         
@@ -254,7 +258,7 @@
                 <textarea name="message"></textarea>
             </div>
 
-            <button type="submit" class="submit-btn">Send Enquiry</button>
+            <button type="submit" class="submit-btn" onclick="sendWhatsApp(event)">Send Enquiry </button>
 
         </form>
 
@@ -475,6 +479,15 @@ btn.onclick = () => box.style.display = "flex";
 function closeChat() {
     box.style.display = "none";
 }
+document.addEventListener("click", function (e) {
+
+    if (box.style.display === "flex") {
+
+        if (!box.contains(e.target) && !btn.contains(e.target)) {
+            closeChat();
+        }
+    }
+});
 
 // ✅ ENTER KEY FIX (important)
 inputField.addEventListener("keydown", function(e) {
@@ -525,7 +538,40 @@ async function sendMessage() {
 
 
 
+<script>
+function sendWhatsApp(e) {
 
+    let name = document.querySelector('[name="patient_name"]').value;
+    let phone = document.querySelector('[name="phone"]').value;
+    let test = document.querySelector('[name="test_name"]').value;
+    let message = document.querySelector('[name="message"]').value;
+
+
+    let text =
+`🧪 BayaPathLab Enquiry
+
+👤 Name:
+${name}
+
+📞 Phone:
+${phone}
+
+🧬 Test:
+${test}
+
+💬 Message:
+${message || "No message"}`;
+
+
+    let url =
+    "https://wa.me/917500270323?text=" +
+    encodeURIComponent(text);
+
+
+    window.open(url, "_blank");
+
+}
+</script>
 
 {% endblock %}
 
