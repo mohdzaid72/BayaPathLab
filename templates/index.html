@@ -161,7 +161,7 @@ BayaPathLab - Best Pathology Lab & Blood Test Centre in Kelakhera Uttarakhand
                     </div>
                 </div>
             </div>
-            <form class="contact-form" method="POST" action="/enquiry">
+            <form class="contact-form" method="POST" action="/enquiry" target="_blank">
                 <div class="form-group">
                     <input type="text" name="patient_name" placeholder="Your Name *" required>
                 </div>
@@ -234,7 +234,7 @@ BayaPathLab - Best Pathology Lab & Blood Test Centre in Kelakhera Uttarakhand
             <span class="close">&times;</span>
         </div>
 
-        <form method="POST" action="/enquiry" class="modal-form">
+        <form method="POST" action="/enquiry" class="modal-form" target="_blank">
 
             <div class="form-group">
                 <label>Patient Name</label>
@@ -538,40 +538,6 @@ async function sendMessage() {
 
 
 
-<script>
-function sendWhatsApp(e) {
-
-    let name = document.querySelector('[name="patient_name"]').value;
-    let phone = document.querySelector('[name="phone"]').value;
-    let test = document.querySelector('[name="test_name"]').value;
-    let message = document.querySelector('[name="message"]').value;
-
-
-    let text =
-`🧪 BayaPathLab Enquiry
-
-👤 Name:
-${name}
-
-📞 Phone:
-${phone}
-
-🧬 Test:
-${test}
-
-💬 Message:
-${message || "No message"}`;
-
-
-    let url =
-    "https://wa.me/917500270323?text=" +
-    encodeURIComponent(text);
-
-
-    window.open(url, "_blank");
-
-}
-</script>
 
 {% endblock %}
 

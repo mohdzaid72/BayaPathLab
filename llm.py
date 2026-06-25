@@ -12,7 +12,7 @@ llm = HuggingFaceEndpoint(
     repo_id="meta-llama/Llama-3.1-8B-Instruct",
     task="text-generation",
     huggingfacehub_api_token=HF_TOKEN,
-    max_new_tokens=100,
+    max_new_tokens=300,
 )
 
 chat_model = ChatHuggingFace(llm=llm)
@@ -24,7 +24,7 @@ You are a professional and safe AI assistant for BayaPathLab.
 BayaPathLab is located in Near Thana, Kelakhera, District U.S. Nagar, Uttarakhand, India.
 
 👨‍⚕️ Owner:
-Dr. Sukhdev Singh
+Mr. Sukhdev Singh
 
 🎯 Scope (ONLY answer these):
 - Pathology tests (availability, basic info, preparation)
@@ -77,6 +77,7 @@ Dr. Sukhdev Singh
 - Human-like (not robotic)
 """
 lab_tests=[
+    
     {
       "name": "ABSOLUTE EOSINOPHILS COUNT (AEC)",
       "price": 100,
@@ -118,12 +119,12 @@ lab_tests=[
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "BLOOD GROUPING (ABO) & RH FACTOR",
+      "name": "BIOOD GROUPING (ABO) &RHFACTOR",
       "price": 50,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "BLOOD UREA NITROGEN (BUN)",
+      "name": "BIOOD UREA NITROGEN (BUN)",
       "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
@@ -133,22 +134,27 @@ lab_tests=[
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "CALCIUM, IONIZED",
+      "name": "CALCIUM, IONZED",
       "price": 250,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "C. HDL CHOLESTEROL TOTAL",
+      "name": "C. HDL",
       "price": 150,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "CLOTTING TIME (CT)",
+      "name": "CHOLESTEROL TOTAL",
       "price": 120,
       "pre_test_guideline": "Overnight fasting is mandatory"
     },
     {
-      "name": "COMPLETE BLOOD COUNT (CBC)",
+      "name": "CLOITING TIME (CT)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "COMPLETE BIOOD COUNT (CBC)",
       "price": 250,
       "pre_test_guideline": "No special preparation required"
     },
@@ -157,89 +163,116 @@ lab_tests=[
       "price": 350,
       "pre_test_guideline": "No special preparation required"
     },
+    
     {
-      "name": "CREATININE, SERUM",
+      "name": "ABSOLUTE EOSINOPHILS COUNT (AEC)",
       "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "DENGUE FEVER COMB. PANEL NS1 Ag ANTIBODY IgG & IgM",
-      "price": 800,
+      "name": "ALBUMIN SERUM",
+      "price": 70,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "DLC",
+      "name": "ALKALINE PHOSPHATASE (ALP)",
+      "price": 120,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "AMYLASE, SERUM",
+      "price": 300,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BILIRUBIN TOTAL",
       "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "ELECTROLYTES (Na, K, Ca) SERUM",
-      "price": 300,
+      "name": "BILIRUBIN DIRECT",
+      "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "ERYTHROCYTE SEDIMENTATION RATE (ESR) WINTROBE",
+      "name": "BILIRUBIN INDIRECT",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "BLEEDING TIME (BT)",
       "price": 50,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "GLUCOSE TOLERANCE TEST (GTT) 4 BLOOD & URINE SAMPLE",
-      "price": 320,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "GLYCOSYLATED HEMOGLOBIN (HbA1C)",
-      "price": 500,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "HAEMOGLOBIN (HB%)",
+      "name": "BIOOD GROUPING (ABO) &RHFACTOR",
       "price": 50,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "HB%, TLC, DLC, ESR",
-      "price": 180,
+      "name": "BIOOD UREA NITROGEN (BUN)",
+      "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "HEMOGRAM (CBC & ESR)",
-      "price": 300,
+      "name": "CALCIUM, SERUM",
+      "price": 150,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "HBsAg",
-      "price": 200,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "HCV",
+      "name": "CALCIUM, IONZED",
       "price": 250,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "HIV 1/2",
-      "price": 200,
+      "name": "C. HDL",
+      "price": 150,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "KIDNEY FUNCTION TEST (KFT/RFT)",
-      "price": 650,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "LIPASE, SERUM",
-      "price": 620,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "LIPID PROFILE",
-      "price": 400,
+      "name": "CHOLESTEROL TOTAL",
+      "price": 120,
       "pre_test_guideline": "Overnight fasting is mandatory"
     },
     {
-      "name": "LIVER FUNCTION TEST (LFT)",
-      "price": 450,
+      "name": "CLOITING TIME (CT)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "COMPLETE BIOOD COUNT (CBC)",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "C-REACTIVE PROTEIN (CRP)",
+      "price": 350,
+      "pre_test_guideline": "No special preparation required"
+    },
+      
+    {
+      "name": "PACKED CELL VOLUME (PCV / HAEMATOCRIT)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "PLATELET COUNT",
+      "price": 120,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "POTASSIUM (K)",
+      "price": 280,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "RA FACTOR (QUANTITATIVE)",
+      "price": 350,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SEMEN ANALYSIS",
+      "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
@@ -250,6 +283,128 @@ lab_tests=[
     {
       "name": "SGPT (ALT)",
       "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SODIUM (Na)",
+      "price": 280,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SPUTUM FOR AFB",
+      "price": 300,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "STOOL R/E (ROUTINE EXAMINATION)",
+      "price": 200,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "STOOL EXAMINATION, OCCULT BLOOD",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "SUGAR BLOOD / SERUM FASTING / POST PRANDIAL / RANDOM",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required",
+      "note": "Price is ₹50 each"
+    },
+    {
+      "name": "SUGAR BLOOD / BY GLUCOMETER",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "TOTAL LEUCOCYTE COUNT (TLC)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "TOTAL PROTEIN",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "TRIGLYCERIDES, SERUM",
+      "price": 150,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "TYPHIDOT",
+      "price": 250,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "UREA, BLOOD / SERUM",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "URIC ACID, SERUM",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "URINE FOR BILE SALT & BILE PIGMENT",
+      "price": 150,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "URINE EXAMINATION, COMPLETE",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+      
+    {
+      "name": "URINE FOR PREGNANCY TEST (UPT)",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "URINE R/E & M/E (ROUTINE & MICROSCOPIC EXAMINATION)",
+      "price": 50,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "URINE FOR SUGAR",
+      "price": 40,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "VDRL",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "WIDAL SLIDE AGGLUTINATION TEST",
+      "price": 100,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "WIDAL TUBE AGGLUTINATION TEST",
+      "price": 500,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "THYROID PROFILE TOTAL",
+      "price": 350,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "BETA HCG TOTAL (MATERNAL)",
+      "price": 700,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "PROTHROMBIN TIME STUDIES",
+      "price": 350,
+      "pre_test_guideline": "Overnight fasting is mandatory"
+    },
+    {
+      "name": "CULTURE URINE",
+      "price": 850,
       "pre_test_guideline": "No special preparation required"
     },
     {
@@ -302,6 +457,7 @@ lab_tests=[
       "price": 1050,
       "pre_test_guideline": "Overnight fasting is mandatory"
     },
+
     {
       "name": "SU - SW - 2",
       "price": 1350,

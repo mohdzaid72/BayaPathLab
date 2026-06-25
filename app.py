@@ -123,7 +123,8 @@ conf = ConnectionConfig(
     MAIL_SERVER="smtp.gmail.com",
     MAIL_STARTTLS=True,
     MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
+    USE_CREDENTIALS=True,
+    TIMEOUT=80,
 )
 
 # =========================
@@ -586,12 +587,27 @@ async def create_enquiry(
 
     db.refresh(enquiry)
 
-    await run_in_threadpool(
-        send_whatsapp_enquiry,
-        enquiry
+    # ✅ BUILD WHATSAPP MESSAGE HERE (SERVER SIDE)
+    whatsapp_text = f"""🧪 BayaPathLab Enquiry
+
+👤 Name:
+{enquiry.patient_name}
+
+📞 Phone:
+{enquiry.phone}
+
+🧬 Test:
+{enquiry.test_name or "Not mentioned"}
+
+💬 Message:
+{enquiry.message or "No message"}"""
+
+    whatsapp_url = (
+        "https://wa.me/917500270323?text=" +
+        requests.utils.quote(whatsapp_text)
     )
 
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(whatsapp_url, status_code=303)
 
 
 
@@ -624,3 +640,14 @@ Sitemap: https://www.bayapathlab.com/sitemap.xml"""
         content=txt,
         media_type="text/plain"
     )
+
+
+@app.get("/smtp-test")
+async def smtp_test():
+    import socket
+
+    try:
+        socket.create_connection(("smtp.gmail.com", 587), timeout=10)
+        return {"status": "connected"}
+    except Exception as e:
+        return {"error": str(e)}

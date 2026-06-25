@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text,DateTime, Float, Boolean
 from sqlalchemy.sql import func
 from database import Base
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
+IST = ZoneInfo("Asia/Kolkata")
 class TestPoster(Base):
     __tablename__ = "test_posters"
     
@@ -19,7 +22,10 @@ class TestPoster(Base):
 
     image_path = Column(String(255), nullable=False)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(
+    DateTime,
+    default=lambda: datetime.now(IST)
+    )
 
     is_active = Column(Boolean, default=True)
 class Enquiry(Base):
@@ -31,7 +37,10 @@ class Enquiry(Base):
     email = Column(String(100))
     test_name = Column(String(100))
     message = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(
+    DateTime,
+    default=lambda: datetime.now(IST)
+)
 
 class Admin(Base):
     __tablename__ = "admins"
