@@ -121,91 +121,111 @@ lab_tests=[
       "pre_test_guideline": "No special preparation required"
     },
     
+    
+
     {
-      "name": "ABSOLUTE EOSINOPHILS COUNT (AEC)",
+      "name": "CREATININE, SERUM",
       "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "ALBUMIN SERUM",
-      "price": 70,
+      "name": "DENGUE FEVER COMB.PANET NS1 Ag ANTIBODY LgG &LgM",
+      "price": 800,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "ALKALINE PHOSPHATASE (ALP)",
-      "price": 120,
+      "name": "(DLC)",
+      "price": 100,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "AMYLASE, SERUM",
+      "name": "ELECTROLYTES (Na, K, Ca) SERUM",
       "price": 300,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "BILIRUBIN TOTAL",
-      "price": 100,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "BILIRUBIN DIRECT",
-      "price": 100,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "BILIRUBIN INDIRECT",
-      "price": 100,
-      "pre_test_guideline": "No special preparation required"
-    },
-    {
-      "name": "BLEEDING TIME (BT)",
+      "name": "ERYHROEYTE SEDIMENTATION RATE (ESR) WINTROD's",
       "price": 50,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "BIOOD GROUPING (ABO) &RHFACTOR",
+      "name": "GLUCOSE TOLERANEE TAST (GTT) 4 BIOOD & URINE SAMPLE",
+      "price": 320,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "GIYCOSYLATED HEMOGINDIN (HBAIC)",
+      "price": 500,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HEMOGLOBIN(HB%)",
       "price": 50,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "BIOOD UREA NITROGEN (BUN)",
-      "price": 100,
+      "name": "HB%. TLC. DLC, ESR",
+      "price": 180,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "CALCIUM, SERUM",
-      "price": 150,
+      "name": "HEMOGRAM (CBC&ESR)",
+      "price": 300,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "CALCIUM, IONZED",
+      "name": "HBsAg",
+      "price": 200,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "HCV",
       "price": 250,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "C. HDL",
-      "price": 150,
+      "name": "HIV1/2",
+      "price": 200,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "CHOLESTEROL TOTAL",
-      "price": 120,
+      "name": "KIDNEY FUNCTION TEST (KFT/RFT) (UREA, CREATININE, URIC)",
+      "price": 650,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "LIPASE, SERUM",
+      "price": 620,
+      "pre_test_guideline": "No special preparation required"
+    },
+    {
+      "name": "LIPID PROFILE",
+      "price": 400,
       "pre_test_guideline": "Overnight fasting is mandatory"
     },
     {
-      "name": "CLOITING TIME (CT)",
-      "price": 50,
+      "name": "LIVER FUNCTION TEST (LFT) (BILIRUBIN-TOTAL, DIREET, SGOT, SGPT, ALKALINE PHOSPHATASE)",
+      "price": 450,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "COMPLETE BIOOD COUNT (CBC)",
-      "price": 250,
+      "name": "SGOT, SGPT, ALKALINE PHOSPHATASE)",
+      "price": 280,
       "pre_test_guideline": "No special preparation required"
     },
     {
-      "name": "C-REACTIVE PROTEIN (CRP)",
-      "price": 350,
+      "name": "MANATOUX TEST/ PPD",
+      "price": 150,
       "pre_test_guideline": "No special preparation required"
     },
+    {
+      "name": "MP BY CARD (ANTIGEN CARD)",
+      "price": 150,
+      "pre_test_guideline": "No special preparation required"
+    },
+
+
+
       
     {
       "name": "PACKED CELL VOLUME (PCV / HAEMATOCRIT)",
@@ -476,7 +496,65 @@ prompt = ChatPromptTemplate.from_messages([
 (
 "system",
 """
+
 You are a professional and safe AI assistant for BayaPathLab.
+
+📍 Location:
+BayaPathLab is located in Near Thana, Kelakhera, District U.S. Nagar, Uttarakhand, India.
+
+👨‍⚕️ Owner:
+Mr. Sukhdev Singh
+
+🎯 Scope (ONLY answer these):
+- Pathology tests (availability, basic info, preparation)
+- Lab reports (status, timing, urgency)
+- Health services (blood tests, home sample collection)
+- Booking & contact details
+
+📞 Contact:
+- Phone / WhatsApp: 75000720323
+- Service area: Only nearby locations of Kelakhera
+- Home collection available
+
+🏥 Lab Info:
+- Advanced automatic machines
+- Fast & reliable reports
+
+🧠 Response Rules:
+1. Keep replies SHORT (max 2–3 lines).
+2. Use simple, natural Hinglish.
+3. Be polite and professional.
+4. Do NOT use complex or robotic language.
+
+🚫 STRICT SAFETY RULES:
+
+❌ Do NOT give:
+- Medical advice
+- Diagnosis
+- Treatment suggestions
+- Test recommendations based on symptoms
+
+❌ If user shares symptoms (fever, pain, dizziness, weakness, etc.):
+→ Reply ONLY:
+"For symptoms, please consult a qualified doctor. Tests should be done only after doctor’s advice."
+
+❌ If user asks anything unrelated:
+→ Reply ONLY:
+"Sorry, I can only help with lab tests and related services."
+
+❌ If user asks sensitive/unsafe topics (medical decisions, emergencies, personal health judgment):
+→ Politely refuse and redirect to doctor.
+
+⚠️ Never explain too much.
+⚠️ Never guess.
+⚠️ Never go outside scope.
+
+💬 Tone:
+- Friendly
+- Clear
+- Short
+- Human-like (not robotic)
+
 
 Rules:
 
